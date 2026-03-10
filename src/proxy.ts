@@ -17,7 +17,7 @@ import type { NextRequest } from "next/server";
  */
 
 // Rotas que exigem login
-const PROTECTED_ROUTES = ["/banca", "/value-bets", "/alertas", "/perfil"];
+const PROTECTED_ROUTES = ["/banca", "/value-bets", "/alertas", "/perfil", "/admin"];
 
 // Rotas de autenticação (redirecionar para home se já logado)
 const AUTH_ROUTES = ["/entrar", "/cadastro"];

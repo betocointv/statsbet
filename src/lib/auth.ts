@@ -18,6 +18,8 @@ export interface User {
   email: string;
   plan: Plan;
   createdAt: string;
+  isAdmin?: boolean;
+  planExpiresAt?: string; // ISO date — undefined = sem expiração
 }
 
 export interface AuthState {
@@ -147,7 +149,7 @@ function clearRateLimit(): void {
 
 // ─── "Banco de dados" local (MVP — substituir por API real em produção) ───────
 
-function getUsers(): Record<string, User & { password: string }> {
+export function getUsers(): Record<string, User & { password: string }> {
   if (typeof window === "undefined") return {};
   try {
     return JSON.parse(localStorage.getItem("statsbet_users") || "{}");
@@ -156,7 +158,7 @@ function getUsers(): Record<string, User & { password: string }> {
   }
 }
 
-function saveUsers(users: Record<string, User & { password: string }>) {
+export function saveUsers(users: Record<string, User & { password: string }>) {
   if (typeof window === "undefined") return;
   localStorage.setItem("statsbet_users", JSON.stringify(users));
 }
@@ -234,8 +236,18 @@ export async function loginUser(
   // Login bem-sucedido — limpar rate limit
   clearRateLimit();
 
+  // Bootstrap do primeiro admin
+  const OWNER_EMAIL = "betocointv@gmail.com";
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { password: _, ...user } = found;
+  const { password: _, ...userFields } = found;
+  let user: User = userFields;
+
+  if (user.email === OWNER_EMAIL && !user.isAdmin) {
+    users[user.id].isAdmin = true;
+    saveUsers(users);
+    user = { ...user, isAdmin: true };
+  }
+
   return { user };
 }
 
@@ -258,6 +270,13 @@ export function getStoredUser(): User | null {
       return null;
     }
 
+    // Downgrade automático se plano expirou
+    if (raw.planExpiresAt && new Date(raw.planExpiresAt) < new Date()) {
+      const downgraded: User = { ...raw, plan: "free", planExpiresAt: undefined };
+      storeUser(downgraded);
+      return downgraded;
+    }
+
     return raw as User;
   } catch {
     return null;
@@ -272,6 +291,32 @@ export function storeUser(user: User) {
 export function clearUser() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(AUTH_KEY);
+}
+
+// ─── Funções admin ───────────────────────────────────────────────────────────
+
+export function adminUpdateUser(
+  userId: string,
+  updates: Partial<Pick<User, "plan" | "planExpiresAt" | "isAdmin">>
+): { ok: true } | { error: string } {
+  if (typeof window === "undefined") return { error: "Disponível apenas no cliente." };
+  const users = getUsers();
+  if (!users[userId]) return { error: "Usuário não encontrado." };
+
+  users[userId] = { ...users[userId], ...updates };
+  saveUsers(users);
+
+  // Se for o usuário logado atualmente → atualizar sessão também
+  try {
+    const stored = JSON.parse(localStorage.getItem(AUTH_KEY) || "null");
+    if (stored && stored.id === userId) {
+      storeUser({ ...stored, ...updates });
+    }
+  } catch {
+    // ignorar
+  }
+
+  return { ok: true };
 }
 
 // ─── Login via Google Identity Services ──────────────────────────────────────
@@ -309,21 +354,31 @@ export async function loginWithGoogle(
 
     const users = getUsers();
 
+    const OWNER_EMAIL = "betocointv@gmail.com";
+
     // Verifica se já existe conta com este e-mail
     const existing = Object.values(users).find(u => u.email === email);
     if (existing) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _, ...user } = existing;
+      const { password: _, ...userFields } = existing;
+      let user: User = userFields;
+      if (user.email === OWNER_EMAIL && !user.isAdmin) {
+        users[user.id].isAdmin = true;
+        saveUsers(users);
+        user = { ...user, isAdmin: true };
+      }
       return { user };
     }
 
     // Cria nova conta — Google users não possuem senha local
+    const isOwner = email === OWNER_EMAIL;
     const user: User = {
       id:        `google_${googleId}`,
       name,
       email,
       plan:      "free",
       createdAt: new Date().toISOString(),
+      ...(isOwner ? { isAdmin: true } : {}),
     };
     users[user.id] = { ...user, password: "" };
     saveUsers(users);

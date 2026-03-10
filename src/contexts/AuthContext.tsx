@@ -26,6 +26,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<{ error?: string }>;
   loginWithGoogle: (credential: string) => Promise<{ error?: string }>;
   logout: () => void;
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -107,9 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSessionCookie(); // ← middleware passa a bloquear rotas protegidas
   }, []);
 
+  const refreshUser = useCallback(() => {
+    const stored = getStoredUser();
+    if (stored) setUser(stored);
+  }, []);
+
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ""}>
-      <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, logout }}>
+      <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, logout, refreshUser }}>
         {children}
       </AuthContext.Provider>
     </GoogleOAuthProvider>

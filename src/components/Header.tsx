@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Search, Bell, ChevronDown, Zap, Menu, X,
-  LogIn, UserPlus, LogOut, User, Crown, Settings,
+  LogIn, UserPlus, LogOut, User, Crown, Settings, Shield,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { planLabel, planColor } from "@/lib/auth";
@@ -76,6 +76,16 @@ export default function Header() {
             {item.label}
           </Link>
         ))}
+        {user?.isAdmin && (
+          <Link
+            href="/admin"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
+            style={{ color: "var(--accent)" }}
+          >
+            <Shield size={14} />
+            Admin
+          </Link>
+        )}
       </nav>
 
       <div className="flex-1" />
@@ -219,6 +229,17 @@ export default function Header() {
                       <Settings size={14} />
                       Configurações
                     </Link>
+                    {user.isAdmin && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm hover:bg-white/5 transition-colors"
+                        style={{ color: "var(--accent)" }}
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <Shield size={14} />
+                        Back Office
+                      </Link>
+                    )}
                   </div>
 
                   <div className="border-t py-1" style={{ borderColor: "var(--border)" }}>
@@ -293,13 +314,26 @@ export default function Header() {
                 </Link>
               </>
             ) : (
-              <button
-                onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                className="px-3 py-2 rounded-lg text-sm font-medium text-left"
-                style={{ color: "var(--live)" }}
-              >
-                Sair da conta
-              </button>
+              <>
+                {user?.isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2"
+                    style={{ color: "var(--accent)" }}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Shield size={14} />
+                    Back Office
+                  </Link>
+                )}
+                <button
+                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-left"
+                  style={{ color: "var(--live)" }}
+                >
+                  Sair da conta
+                </button>
+              </>
             )}
           </div>
         </div>
