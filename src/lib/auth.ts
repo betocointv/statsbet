@@ -277,6 +277,19 @@ export function getStoredUser(): User | null {
       return downgraded;
     }
 
+    // Bootstrap admin para sessões salvas antes da feature de isAdmin
+    const OWNER_EMAIL = "betocointv@gmail.com";
+    if (raw.email === OWNER_EMAIL && !raw.isAdmin) {
+      const users = getUsers();
+      if (users[raw.id]) {
+        users[raw.id].isAdmin = true;
+        saveUsers(users);
+      }
+      const bootstrapped: User = { ...raw, isAdmin: true };
+      storeUser(bootstrapped);
+      return bootstrapped;
+    }
+
     return raw as User;
   } catch {
     return null;
