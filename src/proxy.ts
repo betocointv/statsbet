@@ -22,7 +22,7 @@ const PROTECTED_ROUTES = ["/banca", "/value-bets", "/alertas", "/perfil"];
 // Rotas de autenticação (redirecionar para home se já logado)
 const AUTH_ROUTES = ["/entrar", "/cadastro"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const response     = NextResponse.next();
 

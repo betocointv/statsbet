@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, LogIn, Eye, EyeOff, TrendingUp } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function LoginPage() {
+// Componente interno separado para isolar o useSearchParams no Suspense
+function LoginForm() {
   const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,7 +89,6 @@ export default function LoginPage() {
               onSuccess={(cr) => { if (cr.credential) handleGoogleLogin(cr.credential); }}
               onError={() => setError("Falha ao entrar com o Google. Tente novamente.")}
               text="signin_with"
-              locale="pt-BR"
               shape="rectangular"
               theme="filled_black"
               width={340}
@@ -190,5 +190,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

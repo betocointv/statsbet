@@ -144,7 +144,6 @@ export default function RegisterPage() {
                 onSuccess={(cr) => { if (cr.credential) handleGoogleLogin(cr.credential); }}
                 onError={() => setError("Falha ao entrar com o Google. Tente novamente.")}
                 text="signup_with"
-                locale="pt-BR"
                 shape="rectangular"
                 theme="filled_black"
                 width={340}
